@@ -1,0 +1,86 @@
+// Relay pins for devices
+const int fanPin = 7;
+const int fridgePin = 6;
+const int lightPin = 5;
+const int acPin = 4;
+
+String inputString = "";         // a String to hold incoming data
+bool stringComplete = false;     // whether the string is complete
+
+void setup() {
+  Serial.begin(9600);  // Bluetooth baud rate
+  
+  pinMode(fanPin, OUTPUT);
+  pinMode(fridgePin, OUTPUT);
+  pinMode(lightPin, OUTPUT);
+  pinMode(acPin, OUTPUT);
+  
+  // Initialize all devices OFF (relay HIGH = OFF)
+  digitalWrite(fanPin, HIGH);
+  digitalWrite(fridgePin, HIGH);
+  digitalWrite(lightPin, HIGH);
+  digitalWrite(acPin, HIGH);
+
+  inputString.reserve(10);  // reserve memory for incoming data
+}
+
+void loop() {
+  // check if a string has been received
+  if (stringComplete) {
+    // Process command
+    processCommand(inputString);
+    // clear the string:
+    inputString = "";
+    stringComplete = false;
+  }
+}
+
+void serialEvent() {
+  while (Serial.available()) {
+    char inChar = (char)Serial.read();
+    if (inChar == '\n') {
+      stringComplete = true;
+    } else if (inChar != '\r') {
+      inputString += inChar;  // append to inputString
+    }
+  }
+}
+
+void processCommand(String cmd) {
+  cmd.trim();  // remove any whitespace
+
+  if (cmd.length() == 2) {
+    char device = cmd.charAt(0);
+    char state = cmd.charAt(1);
+
+    bool turnOn = (state == '1');
+
+    switch (device) {
+      case 'F': // Fan
+        digitalWrite(fanPin, turnOn ? LOW : HIGH);
+        Serial.println(turnOn ? "Fan ON" : "Fan OFF");
+        break;
+
+      case 'R': // Fridge
+        digitalWrite(fridgePin, turnOn ? LOW : HIGH);
+        Serial.println(turnOn ? "Fridge ON" : "Fridge OFF");
+        break;
+
+      case 'L': // Light
+        digitalWrite(lightPin, turnOn ? LOW : HIGH);
+        Serial.println(turnOn ? "Light ON" : "Light OFF");
+        break;
+
+      case 'A': // AC
+        digitalWrite(acPin, turnOn ? LOW : HIGH);
+        Serial.println(turnOn ? "AC ON" : "AC OFF");
+        break;
+
+      default:
+        Serial.println("Invalid device");
+        break;
+    }
+  } else {
+    Serial.println("Invalid command");
+  }
+}
